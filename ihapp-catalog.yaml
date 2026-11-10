@@ -1,0 +1,60 @@
+catalog_version: 1
+id: cava-industries/reembolso-despesas
+name: Reembolso de despesas
+summary: Registro de despesas para reembolso com aprovação do gestor e acompanhamento do status.
+description: >-
+  Quem gastou registra a despesa (data, descrição, categoria, valor e observação) e acompanha o
+  status. Gestores aprovam ou recusam as despesas de outras pessoas.
+categories:
+  - financeiro
+  - aprovacoes
+license: MIT
+origin:
+  repository: https://github.com/In-House-Technology/cava-industries-reembolso-despesas.git
+  tag_prefix: v
+version: 1.0.0
+requires:
+  spec_version: 1
+  starter: fastapi-react
+  database: true
+  redis: false
+  object_storage: false
+default_slug: reembolso-despesas
+permissions:
+  data:
+    database: true
+    redis: false
+    object_storage: false
+    tables:
+      - expenses
+      - alembic_version
+  identity:
+    email: true
+    groups: true
+  connectors: []
+  mcp_tools:
+    - name: list_my_expenses
+      access: read
+      why: Listar as despesas da própria pessoa com o status, como aparecem no app.
+    - name: list_pending_expenses
+      access: read
+      groups:
+        - ihc-admins
+        - reembolso-gestores
+      why: Listar as despesas pendentes de aprovação, só para gestores.
+  egress: []
+config: []
+releases:
+  - version: 1.0.0
+    date: '2026-11-10'
+    summary: Primeira versão publicada no catálogo.
+    changes:
+      - type: added
+        text: Registro de despesas, aprovação por gestores e acompanhamento do status.
+    breaking: false
+    migrations:
+      - revision: '0001_expenses'
+        description: Cria a tabela de despesas com UUID, datas de criação, alteração e exclusão lógica.
+        destructive: false
+        backfill: false
+    permissions_changed: false

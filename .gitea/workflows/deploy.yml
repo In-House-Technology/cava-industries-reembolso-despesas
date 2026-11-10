@@ -1,0 +1,21 @@
+# Push to main is the approval. This job has no Docker socket or install credentials.
+# The reconciler verifies the Actions run, fetches the commit itself, then lints,
+# builds and applies it under the app lock, with the deploy journal and health wait.
+name: deploy
+
+on:
+  push:
+    branches: [main]
+
+concurrency:
+  group: deploy-reembolso-despesas
+
+jobs:
+  deploy:
+    runs-on: ihc-deploy
+    timeout-minutes: 20
+    env:
+      APP_SLUG: reembolso-despesas
+    steps:
+      - name: Deploy through the reconciler (lint, build, apply, health)
+        run: ihc-app deploy "$APP_SLUG"

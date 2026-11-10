@@ -1,0 +1,15 @@
+# One app service; the platform provides Postgres, Redis and optional S3.
+services:
+  app:
+    build: .
+    env_file:
+      - path: ${COMPANY_ENV_FILE:-.env}
+        required: false
+    ports:
+      - "${PORT:-8080}:8080"
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8080/health', timeout=2)"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
