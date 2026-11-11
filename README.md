@@ -1,6 +1,16 @@
 # Reembolso de despesas (reembolso-despesas)
 
-Quem pagou uma despesa registra data, descrição, categoria, valor e observação; o gestor aprova ou recusa (recusa exige motivo); cada pessoa acompanha o status das suas. O código fica no Gitea do ihc da empresa; o endereço e o dono são os do `company-app.yaml` instalado.
+Quem pagou uma despesa registra data, descrição, categoria, valor e observação; o gestor aprova ou recusa (recusa exige motivo); cada pessoa acompanha o status das suas. Esta é a origem pública MIT de `cava-industries/reembolso-despesas`. A cópia instalada e os registros de despesas ficam na instância gerenciada da empresa.
+
+## Instalar e usar na empresa
+
+No Claude com o conector da InHouse ativo, peça: “Prepare a instalação de `cava-industries/reembolso-despesas`. Mostre quem pode ver e aprovar as despesas antes de eu decidir.” Revise as permissões, aprove a instalação e abra o link com seu login da empresa. Veja o [guia do catálogo](https://inhouse.technology/cloud/docs/catalog).
+
+1. Registre uma despesa de exemplo e confira se ela aparece como pendente na sua lista.
+2. Peça a outra pessoa, com acesso de aprovação, para decidir. O solicitante não pode decidir a própria despesa; uma recusa exige motivo.
+3. Confira o status com a conta do solicitante. No Claude, as ferramentas deste app só consultam despesas; decisões e cancelamentos são feitos no app.
+
+A versão 1.0.0 não oferece campos de configuração na instalação pelo catálogo. Para mudar os grupos de aprovação, solicite uma [alteração no app instalado](https://inhouse.technology/cloud/docs/build-an-app) e revise tanto o acesso na interface quanto o acesso da ferramenta MCP de pendências.
 
 ## Rules
 
@@ -10,7 +20,7 @@ Quem pagou uma despesa registra data, descrição, categoria, valor e observaç�
 - A pending expense can be cancelled by whoever registered it (soft delete). Decided expenses stay on record.
 - MCP read tools: `list_my_expenses` (optional `status`) for everyone, `list_pending_expenses` for approvers only. Both use the same queries as the UI.
 
-## Run locally
+## Desenvolvimento local
 
 Use Python 3.12 and Node 22. From the app root:
 
@@ -30,7 +40,7 @@ In another terminal: `cd frontend && npm install && npm run dev`. Open the Vite 
 
 Test: `cd backend && ../.venv/bin/python -m pytest -q`. Tests use SQLite through SQLAlchemy (in memory for ORM tests, a temporary database for the Alembic upgrade) and fake gateway JWKS; no Postgres is needed. The container runs `alembic upgrade head` before Uvicorn; when running Uvicorn locally, run the upgrade above first. `/health` returns `ok` and `COMMIT_SHA`/`GIT_SHA` (or `unknown`).
 
-## Change the app
+## Desenvolvimento e manutenção
 
 Define typed SQLAlchemy `Mapped[]` models in `backend/app/models.py`, inheriting `BaseModel` alongside `Base`. Every table gets UUID `id` (default `uuid4`), UTC `created_at`/`modified_at` and their `*_epoch` seconds, plus nullable `deleted_at`/`deleted_at_epoch`. ORM insert/update events keep each timestamp and epoch pair current (including `decided_at`/`decided_at_epoch`); write through ORM instances so these events run. Soft-delete via `deleted_at`; the app session excludes deleted rows by default. Explicit administrative reads can use `execution_options(include_deleted=True)`.
 
@@ -42,6 +52,6 @@ Read the signed-in person from `X-authentik-email`, `-name`, `-username`, `-grou
 
 Use shadcn components in `frontend/src/components/ui` and theme variables only. `/theme.css` fetches `IHC_THEME_URL` server-side (2-second timeout, 60-second cache); unset/failing uses `backend/app/theme.css`. The theme link follows app CSS in `frontend/index.html`.
 
-The platform provides one isolated database/user on shared Postgres (`DATABASE_URL`/`PG*`), sign-in, the MCP gateway and Git-based deploys. Never run your own datastore, mount a Docker socket or use host networking. Never commit `.env` or credentials. Keep tests and `/health`; keep `.gitea/workflows/deploy.yml` as provided. Push to `main` in ihc Gitea deploys through ihc.
+The platform provides one isolated database/user on shared Postgres (`DATABASE_URL`/`PG*`), sign-in, the MCP gateway and deployment. Never run your own datastore, mount a Docker socket or use host networking. Never commit `.env` or credentials. Keep tests and `/health`; keep `.gitea/workflows/deploy.yml` as provided. Changes to an installed app go through the managed check and approval flow; Git records the deployed code.
 
 O check do InHouseCloud compila e roda este app numa área isolada antes de cada deploy pedido pelo chat.
